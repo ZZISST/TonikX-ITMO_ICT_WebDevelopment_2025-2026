@@ -20,7 +20,6 @@ class MyHTTPServer:
             serv_sock.bind((self._host, self._port))
             serv_sock.listen(5)
             print(f"Сервер запущен на http://{self._host}:{self._port}")
-            print("Откройте браузер и перейдите по указанному адресу")
 
             while True:
                 conn, addr = serv_sock.accept()
@@ -59,14 +58,12 @@ class MyHTTPServer:
             lines = request_data.split('\r\n')
             request_line = lines[0]
             
-            # Парсим метод, путь и протокол
             parts = request_line.split(' ')
             if len(parts) != 3:
                 return None
                 
             method, path, protocol = parts
-            
-            # Парсим заголовки
+
             headers = {}
             body_start = 0
             for i, line in enumerate(lines[1:], 1):
