@@ -19,12 +19,12 @@ class Tour(models.Model):
     start_date = models.DateField()
     end_date = models.DateField()
     price = models.DecimalField(max_digits=10, decimal_places=2)
-    country = models.CharField(max_length=100)
+    city = models.CharField(max_length=100)
     payment_terms = models.TextField(blank=True, null=True, help_text="Условия оплаты")
 
 
     def __str__(self):
-        return f"{self.title} — {self.country} ({self.start_date} — {self.end_date})"
+        return f"{self.title} — {self.city} ({self.start_date} — {self.end_date})"
 
 
 class Reservation(models.Model):

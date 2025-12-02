@@ -131,5 +131,5 @@ STATICFILES_DIRS = [
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 
 # Authentication redirects
-LOGIN_REDIRECT_URL = 'tour_list'
-LOGOUT_REDIRECT_URL = 'tour_list'
+LOGIN_REDIRECT_URL = 'about'
+LOGOUT_REDIRECT_URL = 'about'

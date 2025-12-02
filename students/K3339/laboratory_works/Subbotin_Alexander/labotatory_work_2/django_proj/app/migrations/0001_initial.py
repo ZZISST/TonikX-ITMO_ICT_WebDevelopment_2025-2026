@@ -25,7 +25,7 @@ class Migration(migrations.Migration):
                 ('start_date', models.DateField()),
                 ('end_date', models.DateField()),
                 ('price', models.DecimalField(decimal_places=2, max_digits=10)),
-                ('country', models.CharField(max_length=100)),
+                ('city', models.CharField(max_length=100)),
                 ('payment_terms', models.TextField(blank=True, help_text='Условия оплаты', null=True)),
             ],
         ),

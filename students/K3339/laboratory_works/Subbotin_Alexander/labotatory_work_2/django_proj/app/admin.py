@@ -4,9 +4,9 @@ from .models import Tour, Reservation, Review
 
 @admin.register(Tour)
 class TourAdmin(admin.ModelAdmin):
-    list_display = ('title', 'agency', 'country', 'start_date', 'end_date', 'price')
-    search_fields = ('title', 'agency', 'country')
-    list_filter = ('country', 'agency')
+    list_display = ('title', 'agency', 'city', 'start_date', 'end_date', 'price')
+    search_fields = ('title', 'agency', 'city')
+    list_filter = ('city', 'agency')
 
 
 @admin.register(Reservation)

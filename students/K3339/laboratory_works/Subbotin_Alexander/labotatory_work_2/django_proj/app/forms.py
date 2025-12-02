@@ -49,3 +49,50 @@ class RegisterForm(UserCreationForm):
             )
         return user
 
+
+class ProfileForm(forms.ModelForm):
+    username = forms.CharField(max_length=150, label='Никнейм', required=True)
+    first_name = forms.CharField(max_length=150, label='Имя', required=True)
+    last_name = forms.CharField(max_length=150, label='Фамилия', required=True)
+    date_of_birth = forms.DateField(required=False, label='Дата рождения', widget=forms.DateInput(attrs={'type': 'date'}))
+
+    class Meta:
+        model = UserProfile
+        fields = ['date_of_birth']
+
+    def __init__(self, *args, user=None, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.user = user
+        if user:
+            self.fields['username'].initial = user.username
+            self.fields['first_name'].initial = user.first_name
+            self.fields['last_name'].initial = user.last_name
+            if hasattr(user, 'profile') and user.profile.date_of_birth:
+                self.fields['date_of_birth'].initial = user.profile.date_of_birth
+
+    def clean_username(self):
+        username = self.cleaned_data.get('username')
+        if username and self.user:
+            # Check if username is taken by another user
+            if User.objects.filter(username=username).exclude(pk=self.user.pk).exists():
+                raise ValidationError('Это имя пользователя уже занято.')
+        return username
+
+    def save(self, commit=True):
+        instance = super().save(commit=False)
+        
+        # Update User model fields
+        if self.user:
+            self.user.username = self.cleaned_data.get('username')
+            self.user.first_name = self.cleaned_data.get('first_name')
+            self.user.last_name = self.cleaned_data.get('last_name')
+            
+            if commit:
+                self.user.save()
+        
+        # Save UserProfile
+        if commit:
+            instance.save()
+        
+        return instance
+

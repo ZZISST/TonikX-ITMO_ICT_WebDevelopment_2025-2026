@@ -9,23 +9,60 @@ from django.db.models import Count
 
 
 from .models import Tour, Reservation
-from .forms import ReservationForm, ReviewForm, RegisterForm
+from .forms import ReservationForm, ReviewForm, RegisterForm, ProfileForm
 
 
 def register(request):
-    # redirect already authenticated users
     if request.user.is_authenticated:
-        return redirect('tour_list')
+        return redirect('about')
 
     if request.method == "POST":
         form = RegisterForm(request.POST)
         if form.is_valid():
             user = form.save()
             login(request, user)
-            return redirect("tour_list")
+            return redirect("about")
     else:
         form = RegisterForm()
     return render(request, "register.html", {"form": form})
+
+
+class ProfileUpdateView(LoginRequiredMixin, TemplateView):
+    template_name = 'profile.html'
+    
+    def get_context_data(self, **kwargs):
+        ctx = super().get_context_data(**kwargs)
+        user = self.request.user
+        
+        if not hasattr(user, 'profile'):
+            from .models import UserProfile
+            UserProfile.objects.create(user=user)
+        
+        if self.request.method == 'POST':
+            form = ProfileForm(self.request.POST, instance=user.profile, user=user)
+        else:
+            form = ProfileForm(instance=user.profile, user=user)
+        
+        ctx['form'] = form
+        return ctx
+    
+    def post(self, request, *args, **kwargs):
+        user = request.user
+        
+        if not hasattr(user, 'profile'):
+            from .models import UserProfile
+            UserProfile.objects.create(user=user)
+        
+        form = ProfileForm(request.POST, instance=user.profile, user=user)
+        
+        if form.is_valid():
+            form.save()
+            return redirect('profile')
+        
+        context = self.get_context_data()
+        context['form'] = form
+        return render(request, self.template_name, context)
+
 
 class TourListView(ListView):
     model = Tour
@@ -39,7 +76,7 @@ class TourListView(ListView):
             qs = qs.filter(
                 models.Q(title__icontains=q) |
                 models.Q(agency__icontains=q) |
-                models.Q(country__icontains=q) |
+                models.Q(city__icontains=q) |
                 models.Q(description__icontains=q)
             )
         return qs.order_by('start_date')
@@ -133,25 +170,24 @@ class ReservationDeleteView(LoginRequiredMixin, ReservationOwnerMixin, DeleteVie
                 review.save()
         return redirect('tour_detail', pk=pk)
 
-class SoldByCountryView(LoginRequiredMixin, TemplateView):
-    template_name = 'sold_by_country.html'
+class SoldByCityView(LoginRequiredMixin, TemplateView):
+    template_name = 'sold_by_city.html'
 
-    @login_required
     def get_context_data(self, **kwargs):
         ctx = super().get_context_data(**kwargs)
 
-        qs = Tour.objects.filter(reservations__confirmed=True).values('country').annotate(
+        qs = Tour.objects.filter(reservations__confirmed=True).values('city').annotate(
             tours_sold=Count('reservations'),
             total_income=models.Sum(models.F('reservations__guests') * models.F('price'), output_field=models.DecimalField(max_digits=12, decimal_places=2))
         ).order_by('-tours_sold')
 
         ctx['data'] = qs
-        return ctx  
+        return ctx
     
 
 class TourCreateView(UserPassesTestMixin, CreateView):
     model = Tour
-    fields = ['title', 'agency', 'country', 'description', 'start_date', 'end_date', 'price', 'payment_terms']
+    fields = ['title', 'agency', 'city', 'description', 'start_date', 'end_date', 'price', 'payment_terms']
     template_name = 'tour_form.html'
     success_url = reverse_lazy('tour_list')
 

@@ -1,0 +1,27 @@
+{% extends 'base.html' %}
+{% block title %}Продажи по городам{% endblock %}
+{% block content %}
+<h2>Проданные туры по городам</h2>
+<table class="table table-bordered">
+    <thead>
+        <tr>
+            <th>Город</th>
+            <th>Количество продаж</th>
+            <th>Доход (примерно)</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for item in data %}
+        <tr>
+            <td>{{ item.city }}</td>
+            <td>{{ item.total }}</td>
+            <td>{{ item.revenue|default:0 }}</td>
+        </tr>
+        {% empty %}
+        <tr>
+            <td colspan="3">Нет подтверждённых продаж.</td>
+        </tr>
+        {% endfor %}
+    </tbody>
+</table>
+{% endblock %}
