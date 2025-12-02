@@ -7,6 +7,7 @@
         <tr>
             <th>Тур</th>
             <th>Период</th>
+            <th>Гостей</th>
             <th>Статус</th>
             <th></th>
         </tr>
@@ -14,20 +15,21 @@
     <tbody>
         {% for res in reservations %}
         <tr>
-            <td>{{ res.tour.name }}</td>
+            <td><a href="{% url 'tour_detail' res.tour.id %}">{{ res.tour.title }}</a></td>
             <td>{{ res.tour.start_date }} — {{ res.tour.end_date }}</td>
+            <td>{{ res.guests }}</td>
             <td>{% if res.confirmed %}<span class="badge bg-success">Подтверждено</span>{% else %}<span
                     class="badge bg-secondary">Ожидает</span>{% endif %}</td>
             <td>
-                <a href="{% url 'reservation_edit' res.id %}" class="btn btn-sm btn-outline-primary">Редактировать</a>
-                <a href="{% url 'reservation_delete' res.id %}" class="btn btn-sm btn-outline-danger">Удалить</a>
+                <a href="{% url 'reservation_delete' res.id %}" class="btn btn-sm btn-outline-danger">Отменить</a>
             </td>
         </tr>
         {% empty %}
         <tr>
-            <td colspan="4">Нет бронирований.</td>
+            <td colspan="5">Нет бронирований.</td>
         </tr>
         {% endfor %}
     </tbody>
 </table>
+<a href="{% url 'profile' %}" class="btn btn-secondary mt-3">Вернуться в личный кабинет</a>
 {% endblock %}

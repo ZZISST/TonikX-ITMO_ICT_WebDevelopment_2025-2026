@@ -45,7 +45,7 @@
 	</div>
 
 	<p class="lead">Добро пожаловать на Hokkaido Tours!</p>
-    <p class="lead">Здесь вы можете подобрать и забронировать лучшие туры по Хоккайдо</p>
+    <p class="lead">Здесь вы можете подобрать и забронировать лучшие туры по префектуре Хоккайдо</p>
 
 
 </div>
@@ -67,7 +67,7 @@
         <div class="card-body">
             <h5 class="card-title">Добро пожаловать, {{ user.first_name|default:user.username }}!</h5>
             <p class="card-text">Перейдите в личный кабинет, чтобы посмотреть свои брони и управлять ими.</p>
-            <a href="{% url 'my_reservations' %}" class="btn btn-primary">Мой кабинет</a>
+            <a href="{% url 'user_reservations' %}" class="btn btn-primary">Мой кабинет</a>
         </div>
     </div>
     {% endif %}

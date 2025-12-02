@@ -1,7 +1,7 @@
 from django.db import models
 from django.shortcuts import get_object_or_404, redirect, render
 from django.urls import reverse_lazy, reverse
-from django.views.generic import ListView, DetailView, CreateView, UpdateView, DeleteView, TemplateView
+from django.views.generic import ListView, DetailView, CreateView, DeleteView, TemplateView
 from django.contrib.auth.mixins import LoginRequiredMixin, UserPassesTestMixin
 from django.contrib.auth import login
 from django.contrib.auth.decorators import login_required
@@ -9,7 +9,7 @@ from django.db.models import Count
 
 
 from .models import Tour, Reservation
-from .forms import ReservationForm, ReviewForm, RegisterForm, ProfileForm
+from .forms import ReviewForm, RegisterForm, ProfileForm
 
 
 def register(request):
@@ -96,39 +96,35 @@ class TourDetailView(DetailView):
     model = Tour
     template_name = 'tour_detail.html'
 
-
     def get_context_data(self, **kwargs):
         ctx = super().get_context_data(**kwargs)
         ctx['review_form'] = ReviewForm()
         ctx['reservations_count'] = self.object.reservations.filter(confirmed=True).count()
+        
+        if self.request.user.is_authenticated:
+            ctx['user_reservation'] = self.object.reservations.filter(user=self.request.user).first()
+        
         return ctx
 
 
-class ReservationCreateView(LoginRequiredMixin, CreateView):
-    model = Reservation
-    form_class = ReservationForm
-    template_name = 'reservation_form.html'
-
-
-    def dispatch(self, request, *args, **kwargs):
-        self.tour = get_object_or_404(Tour, pk=kwargs.get('tour_id'))
-        return super().dispatch(request, *args, **kwargs)
-
-
-    def form_valid(self, form):
-        form.instance.user = self.request.user
-        form.instance.tour = self.tour
-        form.instance.confirmed = False # admin will confirm
-        return super().form_valid(form)
-
-
-    def get_success_url(self):
-        return reverse('user_reservations')
+@login_required
+def ReservationCreateView(request, tour_id):
+    """Быстрое бронирование тура одной кнопкой (без формы)."""
+    tour = get_object_or_404(Tour, pk=tour_id)
+    existing = Reservation.objects.filter(user=request.user, tour=tour).exists()
+    if not existing:
+        Reservation.objects.create(
+            user=request.user,
+            tour=tour,
+            confirmed=False,
+            guests=1
+        )
+    return redirect('tour_detail', pk=tour_id)
 
 
 class UserReservationListView(LoginRequiredMixin, ListView):
     model = Reservation
-    template_name = 'reservation_list.html'
+    template_name = 'my_reservations.html'
     context_object_name = 'reservations'
     paginate_by = 10
 
@@ -143,32 +139,10 @@ class ReservationOwnerMixin(UserPassesTestMixin):
         return reservation.user == self.request.user
 
 
-class ReservationUpdateView(LoginRequiredMixin, ReservationOwnerMixin, UpdateView):
-    model = Reservation
-    form_class = ReservationForm
-    template_name = 'reservation_form.html'
-
-
-    def get_success_url(self):
-        return reverse('user_reservations')
-
-
 class ReservationDeleteView(LoginRequiredMixin, ReservationOwnerMixin, DeleteView):
     model = Reservation
     template_name = 'reservation_confirm_delete.html'
     success_url = reverse_lazy('user_reservations')
-
-    @login_required
-    def add_review(request, pk):
-        tour = get_object_or_404(Tour, pk=pk)
-        if request.method == 'POST':
-            form = ReviewForm(request.POST)
-            if form.is_valid():
-                review = form.save(commit=False)
-                review.user = request.user
-                review.tour = tour
-                review.save()
-        return redirect('tour_detail', pk=pk)
 
 class SoldByCityView(LoginRequiredMixin, TemplateView):
     template_name = 'sold_by_city.html'
