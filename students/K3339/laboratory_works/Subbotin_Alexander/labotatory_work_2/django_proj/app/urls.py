@@ -1,17 +1,15 @@
 from django.urls import path, include
-from django.contrib import admin
 from . import views
 
 
 urlpatterns = [
-    path('', views.TourListView.as_view(), name='tour_list'),
+    path('', views.TourListView.as_view(), name='about'),
+    path('tour/', views.TourListView.as_view(), name='tour_list'),
     path('tour/<int:pk>/', views.TourDetailView.as_view(), name='tour_detail'),
     
     # autorithation
-    path('admin/', admin.site.urls),
     path('accounts/', include('django.contrib.auth.urls')),
     path("register/", views.register, name="register"),
-    path("login/", views.login, name="login"),
 
 
     path('tour/add/', views.TourCreateView.as_view(), name='tour_create'),
@@ -28,6 +26,7 @@ urlpatterns = [
 
 
     # Sold tours by country
+    # TODO: добавить отображение только при входе с правами админа
     path('sold-by-country/', views.SoldByCountryView.as_view(), name='sold_by_country'),
 
     path('my-reservations/', views.MyReservationsView.as_view(), name='my_reservations'),

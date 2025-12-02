@@ -3,28 +3,29 @@ from django.shortcuts import get_object_or_404, redirect, render
 from django.urls import reverse_lazy, reverse
 from django.views.generic import ListView, DetailView, CreateView, UpdateView, DeleteView, TemplateView
 from django.contrib.auth.mixins import LoginRequiredMixin, UserPassesTestMixin
-from django.contrib.auth.forms import UserCreationForm
 from django.contrib.auth import login
 from django.contrib.auth.decorators import login_required
 from django.db.models import Count
 
 
-from .models import Tour, Reservation, Review
-from .forms import ReservationForm, ReviewForm
+from .models import Tour, Reservation
+from .forms import ReservationForm, ReviewForm, RegisterForm
 
 
 def register(request):
+    # redirect already authenticated users
+    if request.user.is_authenticated:
+        return redirect('tour_list')
+
     if request.method == "POST":
-        form = UserCreationForm(request.POST)
+        form = RegisterForm(request.POST)
         if form.is_valid():
             user = form.save()
             login(request, user)
             return redirect("tour_list")
     else:
-        form = UserCreationForm()
+        form = RegisterForm()
     return render(request, "register.html", {"form": form})
-
-
 
 class TourListView(ListView):
     model = Tour
@@ -69,7 +70,7 @@ class TourDetailView(DetailView):
 class ReservationCreateView(LoginRequiredMixin, CreateView):
     model = Reservation
     form_class = ReservationForm
-    template_name = 'tours/reservation_form.html'
+    template_name = 'reservation_form.html'
 
 
     def dispatch(self, request, *args, **kwargs):
@@ -120,7 +121,6 @@ class ReservationDeleteView(LoginRequiredMixin, ReservationOwnerMixin, DeleteVie
     template_name = 'reservation_confirm_delete.html'
     success_url = reverse_lazy('user_reservations')
 
-
     @login_required
     def add_review(request, pk):
         tour = get_object_or_404(Tour, pk=pk)
@@ -133,11 +133,10 @@ class ReservationDeleteView(LoginRequiredMixin, ReservationOwnerMixin, DeleteVie
                 review.save()
         return redirect('tour_detail', pk=pk)
 
-
-class SoldByCountryView(TemplateView):
+class SoldByCountryView(LoginRequiredMixin, TemplateView):
     template_name = 'sold_by_country.html'
 
-
+    @login_required
     def get_context_data(self, **kwargs):
         ctx = super().get_context_data(**kwargs)
 
