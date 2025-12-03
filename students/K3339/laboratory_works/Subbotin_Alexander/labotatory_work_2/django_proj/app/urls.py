@@ -27,6 +27,5 @@ urlpatterns = [
 
 
     # Sold tours by city
-    # TODO: добавить отображение только при входе с правами админа
     path('sold-by-city/', views.SoldByCityView.as_view(), name='sold_by_city'),
 ]
