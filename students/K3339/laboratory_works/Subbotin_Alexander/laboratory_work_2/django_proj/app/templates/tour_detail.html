@@ -1,0 +1,38 @@
+{% extends 'base.html' %}
+{% block title %}{{ tour.title }}{% endblock %}
+{% block content %}
+<h2>{{ tour.title }}</h2>
+<p><strong>Агентство:</strong> {{ tour.agency }}</p>
+<p><strong>Период:</strong> {{ tour.start_date }} — {{ tour.end_date }}</p>
+<p><strong>Описание:</strong> {{ tour.description }}</p>
+<p><strong>Город:</strong> {{ tour.city }}</p>
+<p><strong>Цена:</strong> {{ tour.price }} ¥</p>
+<p><strong>Условия оплаты:</strong> {{ tour.payment_terms }}</p>
+
+{% if user.is_authenticated %}
+    {% if user_reservation %}
+        <div class="alert alert-success">✓ Вы забронировали этот тур</div>
+        <a href="{% url 'reservation_delete' user_reservation.id %}" class="btn btn-danger">Отменить бронь</a>
+    {% else %}
+        <a href="{% url 'reservation_add' tour.id %}" class="btn btn-success">Забронировать</a>
+    {% endif %}
+{% else %}
+    <p><a href="{% url 'login' %}">Войдите</a>, чтобы забронировать тур.</p>
+{% endif %}
+<hr>
+<h4>Отзывы</h4>
+{% for review in tour.reviews.all %}
+<div class="border p-2 mb-2 rounded">
+    <strong>{{ review.user.username }}</strong> — <small>{{ review.created_at|date:"d.m.Y" }}</small>
+    <div>Рейтинг: ⭐ {{ review.rating }}/10</div>
+    <p>{{ review.text }}</p>
+</div>
+{% empty %}
+<p>Пока нет отзывов.</p>
+{% endfor %}
+{% if user.is_authenticated %}
+<hr>
+<h5>Оставить отзыв</h5>
+<form method="post">{% csrf_token %}{{ form.as_p }}<button class="btn btn-primary">Отправить</button></form>
+{% endif %}
+{% endblock %}
