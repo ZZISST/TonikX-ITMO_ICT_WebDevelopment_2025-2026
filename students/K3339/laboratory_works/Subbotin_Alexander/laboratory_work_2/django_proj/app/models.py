@@ -46,10 +46,8 @@ class Review(models.Model):
     rating = models.PositiveSmallIntegerField() # 1-10
     created_at = models.DateTimeField(default=timezone.now)
 
-
-class Meta:
-    ordering = ['-created_at']
-
+    class Meta:
+        ordering = ['-created_at']
 
     def __str__(self):
         return f"Review #{self.id} ({self.rating}) on {self.tour}"
