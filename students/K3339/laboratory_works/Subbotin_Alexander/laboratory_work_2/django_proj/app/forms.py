@@ -5,14 +5,28 @@ from django.contrib.auth.forms import UserCreationForm
 from django.core.exceptions import ValidationError
 import re
 
-
-class ReservationForm(forms.ModelForm):
-    class Meta:
-        model = Reservation
-        fields = ('guests', 'notes')
-
 class ReviewForm(forms.ModelForm):
-    rating = forms.IntegerField(min_value=1, max_value=10)
+    rating = forms.IntegerField(
+        min_value=1, 
+        max_value=10,
+        widget=forms.NumberInput(attrs={
+            'class': 'form-control',
+            'type': 'range',
+            'min': '1',
+            'max': '10',
+            'step': '1',
+            'oninput': 'this.nextElementSibling.value = this.value'
+        }),
+        label='Рейтинг (1-10)'
+    )
+    text = forms.CharField(
+        widget=forms.Textarea(attrs={
+            'class': 'form-control',
+            'rows': 4,
+            'placeholder': 'Напишите ваш отзыв...'
+        }),
+        label='Текст отзыва'
+    )
 
     class Meta:
         model = Review

@@ -5,8 +5,9 @@ from django.views.generic import ListView, DetailView, CreateView, DeleteView, T
 from django.contrib.auth.mixins import LoginRequiredMixin, UserPassesTestMixin
 from django.contrib.auth import login
 from django.contrib.auth.decorators import login_required
-from django.db.models import Count
-
+from django.db.models import Count, Sum
+from django.views.generic.edit import FormMixin
+from django.contrib import messages
 
 from .models import Tour, Reservation
 from .forms import ReviewForm, RegisterForm, ProfileForm
@@ -92,13 +93,19 @@ class MyReservationsView(LoginRequiredMixin, ListView):
 
 
 
-class TourDetailView(DetailView):
+class TourDetailView(FormMixin, DetailView):
     model = Tour
     template_name = 'tour_detail.html'
+    form_class = ReviewForm
 
     def get_context_data(self, **kwargs):
         ctx = super().get_context_data(**kwargs)
-        ctx['review_form'] = ReviewForm()
+
+        total_guests = self.object.reservations.filter(confirmed=True).aggregate(
+            total=Sum('guests')
+        )['total'] or 0
+        
+        ctx['total_guests'] = total_guests
         ctx['reservations_count'] = self.object.reservations.filter(confirmed=True).count()
         
         if self.request.user.is_authenticated:
@@ -106,10 +113,31 @@ class TourDetailView(DetailView):
         
         return ctx
 
+    def post(self, request, *args, **kwargs):
+        if not request.user.is_authenticated:
+            messages.error(request, 'Войдите, чтобы оставить отзыв')
+            return redirect('login')
+        
+        self.object = self.get_object()
+        form = self.get_form()
+        
+        if form.is_valid():
+            review = form.save(commit=False)
+            review.tour = self.object
+            review.user = request.user
+            review.save()
+            messages.success(request, 'Отзыв успешно добавлен!')
+            return redirect('tour_detail', pk=self.object.pk)
+        else:
+            messages.error(request, 'Ошибка при добавлении отзыва')
+            return self.form_invalid(form)
+
+    def get_success_url(self):
+        return reverse('tour_detail', kwargs={'pk': self.object.pk})
+
 
 @login_required
 def ReservationCreateView(request, tour_id):
-    """Быстрое бронирование тура одной кнопкой (без формы)."""
     tour = get_object_or_404(Tour, pk=tour_id)
     existing = Reservation.objects.filter(user=request.user, tour=tour).exists()
     if not existing:
@@ -150,12 +178,39 @@ class SoldByCityView(LoginRequiredMixin, TemplateView):
     def get_context_data(self, **kwargs):
         ctx = super().get_context_data(**kwargs)
 
-        qs = Tour.objects.filter(reservations__confirmed=True).values('city').annotate(
-            tours_sold=Count('reservations'),
-            total_income=models.Sum(models.F('reservations__guests') * models.F('price'), output_field=models.DecimalField(max_digits=12, decimal_places=2))
-        ).order_by('-tours_sold')
+        all_reservations = Tour.objects.filter(reservations__isnull=False).values('city').annotate(
+            total_reservations=Count('reservations', distinct=True),
+            total_guests=Sum('reservations__guests'),
+            total_income=Sum(models.F('reservations__guests') * models.F('price'), output_field=models.DecimalField(max_digits=12, decimal_places=2))
+        ).order_by('-total_reservations')
 
-        ctx['data'] = qs
+        confirmed_reservations = Tour.objects.filter(reservations__confirmed=True).values('city').annotate(
+            confirmed_reservations=Count('reservations', distinct=True),
+            confirmed_guests=Sum('reservations__guests'),
+            confirmed_income=Sum(models.F('reservations__guests') * models.F('price'), output_field=models.DecimalField(max_digits=12, decimal_places=2))
+        ).order_by('-confirmed_reservations')
+
+        city_data = {}
+        for item in all_reservations:
+            city = item['city']
+            city_data[city] = {
+                'city': city,
+                'total_reservations': item['total_reservations'],
+                'total_guests': item['total_guests'],
+                'total_income': item['total_income'],
+                'confirmed_reservations': 0,
+                'confirmed_guests': 0,
+                'confirmed_income': 0
+            }
+        
+        for item in confirmed_reservations:
+            city = item['city']
+            if city in city_data:
+                city_data[city]['confirmed_reservations'] = item['confirmed_reservations']
+                city_data[city]['confirmed_guests'] = item['confirmed_guests']
+                city_data[city]['confirmed_income'] = item['confirmed_income']
+
+        ctx['data'] = list(city_data.values())
         return ctx
     
 

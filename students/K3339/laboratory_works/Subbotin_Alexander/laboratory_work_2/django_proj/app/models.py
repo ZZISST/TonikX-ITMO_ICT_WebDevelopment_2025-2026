@@ -26,7 +26,6 @@ class Tour(models.Model):
     def __str__(self):
         return f"{self.title} — {self.city} ({self.start_date} — {self.end_date})"
 
-#TODO: убрать поле guests из модели и каунтить общее количество людей по всем бронированиям
 class Reservation(models.Model):
     tour = models.ForeignKey(Tour, on_delete=models.CASCADE, related_name='reservations')
     user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='reservations')
