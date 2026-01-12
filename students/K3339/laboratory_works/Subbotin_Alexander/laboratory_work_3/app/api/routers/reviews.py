@@ -17,7 +17,8 @@ async def create_review(
     current_user = Depends(get_current_user)
 ):
     """
-    Создание нового отзыва на тур (требуется авторизация).
+    Создание нового отзыва на тур (требуется авторизация и подтверждённое бронирование).
+    Один пользователь может оставить только один отзыв на тур.
     
     - **tour_id**: ID тура
     - **text**: текст отзыва
@@ -31,12 +32,53 @@ async def create_review(
             detail="Tour not found"
         )
     
+    # Проверяем, есть ли подтверждённое бронирование на этот тур
+    confirmed_reservation = await crud.get_confirmed_reservation(
+        db, user_id=current_user.id, tour_id=review_data.tour_id
+    )
+    if not confirmed_reservation:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="You can only review tours with confirmed reservations"
+        )
+    
+    # Проверяем, не оставлял ли пользователь уже отзыв на этот тур
+    existing_review = await crud.get_review_by_user_tour(
+        db, user_id=current_user.id, tour_id=review_data.tour_id
+    )
+    if existing_review:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="You already have a review for this tour. Use PUT to update it."
+        )
+    
     review = await crud.create_review(
         db,
         user_id=current_user.id,
         review_data=review_data.model_dump()
     )
     return review
+
+
+@router.get("/my/{tour_id}", response_model=ReviewWithUser)
+async def get_my_review_for_tour(
+    tour_id: int,
+    db: AsyncSession = Depends(get_async_session),
+    current_user = Depends(get_current_user)
+):
+    """
+    Получение своего отзыва на конкретный тур.
+    """
+    review = await crud.get_review_by_user_tour(db, user_id=current_user.id, tour_id=tour_id)
+    if not review:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Review not found"
+        )
+    
+    review_dict = ReviewWithUser.model_validate(review).model_dump()
+    review_dict['username'] = review.user.username if review.user else None
+    return ReviewWithUser(**review_dict)
 
 
 @router.get("/tour/{tour_id}", response_model=List[ReviewWithUser])

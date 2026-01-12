@@ -7,7 +7,7 @@ from app.core.settings.security import get_password_hash
 logger = logging.getLogger(__name__)
 
 
-async def create_user(db: AsyncSession, username: str, email: str, password: str) -> User:
+async def create_user(db: AsyncSession, username: str, email: str, password: str, is_admin: bool = False) -> User:
     """
     Create a new user in the database.
     
@@ -16,6 +16,7 @@ async def create_user(db: AsyncSession, username: str, email: str, password: str
         username: Unique username for the user
         email: Unique email address
         password: Plain text password (will be hashed)
+        is_admin: Whether the user is an admin (default: False)
     
     Returns:
         User: Created user instance
@@ -30,10 +31,11 @@ async def create_user(db: AsyncSession, username: str, email: str, password: str
     user = User(
         username=username,
         email=email,
-        hashed_password=hashed_password
+        hashed_password=hashed_password,
+        is_admin=is_admin
     )
     db.add(user)
     await db.commit()
     await db.refresh(user)
-    logger.info(f"User created successfully: {username} (ID: {user.id})")
+    logger.info(f"User created successfully: {username} (ID: {user.id}, is_admin: {is_admin})")
     return user

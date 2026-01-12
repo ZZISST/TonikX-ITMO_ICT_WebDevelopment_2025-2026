@@ -4,9 +4,9 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from datetime import timedelta
 
 from app.core.database import get_async_session
-from app.core.settings.security import verify_password, create_access_token, decode_token
+from app.core.settings.security import verify_password, create_access_token, decode_token, get_password_hash
 from app.core.settings.config import settings
-from app.api.schemas import UserCreate, UserResponse, Token, UserProfileCreate, UserProfileResponse
+from app.api.schemas import UserCreate, UserResponse, Token, UserProfileCreate, UserProfileResponse, UserUpdate, PasswordChange
 from app.core.db import crud
 
 router = APIRouter(prefix="/auth", tags=["Authentication"])
@@ -37,6 +37,18 @@ async def get_current_user(
         raise credentials_exception
     
     return user
+
+
+async def get_current_admin(
+    current_user = Depends(get_current_user)
+):
+    """Проверяет, что текущий пользователь - администратор"""
+    if not current_user.is_admin:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Admin access required"
+        )
+    return current_user
 
 
 @router.post("/register", response_model=UserResponse, status_code=status.HTTP_201_CREATED)
@@ -158,3 +170,67 @@ async def update_my_profile(
         )
     
     return profile
+
+
+@router.put("/me", response_model=UserResponse)
+async def update_me(
+    user_data: UserUpdate,
+    current_user = Depends(get_current_user),
+    db: AsyncSession = Depends(get_async_session)
+):
+    """
+    Обновление данных текущего пользователя (username, email).
+    """
+    # Проверяем, не занят ли username
+    if user_data.username and user_data.username != current_user.username:
+        existing_user = await crud.get_user_by_username(db, user_data.username)
+        if existing_user:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Username already taken"
+            )
+    
+    # Проверяем, не занят ли email
+    if user_data.email and user_data.email != current_user.email:
+        existing_email = await crud.get_user_by_email(db, user_data.email)
+        if existing_email:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Email already taken"
+            )
+    
+    # Обновляем пользователя
+    updated_user = await crud.update_user(
+        db,
+        user_id=current_user.id,
+        username=user_data.username,
+        email=user_data.email
+    )
+    
+    return updated_user
+
+
+@router.put("/me/password")
+async def change_password(
+    password_data: PasswordChange,
+    current_user = Depends(get_current_user),
+    db: AsyncSession = Depends(get_async_session)
+):
+    """
+    Смена пароля текущего пользователя.
+    """
+    # Проверяем текущий пароль
+    if not verify_password(password_data.current_password, current_user.hashed_password):
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Current password is incorrect"
+        )
+    
+    # Обновляем пароль
+    await crud.update_user_password(
+        db,
+        user_id=current_user.id,
+        new_password=password_data.new_password
+    )
+    
+    return {"message": "Password changed successfully"}

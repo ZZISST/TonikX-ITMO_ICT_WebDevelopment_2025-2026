@@ -25,6 +25,7 @@ class UserResponse(UserBase):
     """Схема ответа с данными пользователя"""
     id: int
     is_active: bool
+    is_admin: bool
     created_at: datetime
 
     class Config:
@@ -56,6 +57,18 @@ class UserProfileCreate(UserProfileBase):
 class UserProfileUpdate(UserProfileBase):
     """Схема для обновления профиля пользователя"""
     pass
+
+
+class UserUpdate(BaseModel):
+    """Схема для обновления данных пользователя"""
+    username: Optional[str] = Field(None, min_length=3, max_length=150)
+    email: Optional[EmailStr] = None
+
+
+class PasswordChange(BaseModel):
+    """Схема для смены пароля"""
+    current_password: str
+    new_password: str = Field(..., min_length=6)
 
 
 class UserProfileResponse(UserProfileBase):

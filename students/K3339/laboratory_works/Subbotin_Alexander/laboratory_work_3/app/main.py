@@ -4,12 +4,38 @@ from fastapi.middleware.cors import CORSMiddleware
 from contextlib import asynccontextmanager
 
 from app.api.routers import auth, tours, reservations, reviews
-from app.core.database import init_db, close_db
+from app.api.routers.database_manager import database_manage_router
+from app.core.database import init_db, close_db, async_session_local
 from app.core.logging_config import setup_logging
+from app.core.db import crud
 
 # Setup logging
 setup_logging(level=logging.INFO)
 logger = logging.getLogger(__name__)
+
+# Default admin credentials
+DEFAULT_ADMIN_USERNAME = "admin"
+DEFAULT_ADMIN_EMAIL = "admin@touragency.com"
+DEFAULT_ADMIN_PASSWORD = "admin123"
+
+
+async def create_default_admin():
+    """Create default admin user if not exists"""
+    async with async_session_local() as db:
+        existing_admin = await crud.get_user_by_username(db, DEFAULT_ADMIN_USERNAME)
+        if not existing_admin:
+            logger.info("Creating default admin user...")
+            admin = await crud.create_user(
+                db,
+                username=DEFAULT_ADMIN_USERNAME,
+                email=DEFAULT_ADMIN_EMAIL,
+                password=DEFAULT_ADMIN_PASSWORD,
+                is_admin=True
+            )
+            await crud.create_user_profile(db, user_id=admin.id)
+            logger.info(f"Default admin created: {DEFAULT_ADMIN_USERNAME}")
+        else:
+            logger.info("Default admin already exists")
 
 
 @asynccontextmanager
@@ -28,6 +54,9 @@ async def lifespan(app: FastAPI):
     logger.info("Starting Tour Agency API...")
     await init_db()
     logger.info("Database initialized successfully")
+    
+    # Create default admin
+    await create_default_admin()
     
     yield
     
@@ -60,6 +89,7 @@ app.include_router(auth.router)
 app.include_router(tours.router)
 app.include_router(reservations.router)
 app.include_router(reviews.router)
+app.include_router(database_manage_router)
 
 
 @app.get("/", tags=["Root"])

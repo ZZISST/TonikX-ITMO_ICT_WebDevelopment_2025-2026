@@ -1,4 +1,5 @@
 import logging
+from datetime import datetime
 from typing import Optional
 from sqlalchemy import update
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -6,6 +7,13 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.core.db.models.tour import Tour
 
 logger = logging.getLogger(__name__)
+
+
+def _strip_timezone(dt) -> datetime:
+    """Remove timezone info from datetime to make it naive."""
+    if dt is not None and hasattr(dt, 'tzinfo') and dt.tzinfo is not None:
+        return dt.replace(tzinfo=None)
+    return dt
 
 
 async def update_tour(db: AsyncSession, tour_id: int, tour_data: dict) -> Optional[Tour]:
@@ -30,6 +38,12 @@ async def update_tour(db: AsyncSession, tour_id: int, tour_data: dict) -> Option
     
     # Remove None values
     tour_data = {k: v for k, v in tour_data.items() if v is not None}
+    
+    # Strip timezone from dates to avoid naive/aware datetime mismatch
+    if 'start_date' in tour_data:
+        tour_data['start_date'] = _strip_timezone(tour_data['start_date'])
+    if 'end_date' in tour_data:
+        tour_data['end_date'] = _strip_timezone(tour_data['end_date'])
     
     if not tour_data:
         logger.warning(f"No data to update for tour ID: {tour_id}")

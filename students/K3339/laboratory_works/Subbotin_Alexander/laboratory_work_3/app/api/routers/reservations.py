@@ -3,9 +3,9 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from typing import List
 
 from app.core.database import get_async_session
-from app.api.schemas import ReservationCreate, ReservationUpdate, ReservationWithTour
+from app.api.schemas import ReservationCreate, ReservationUpdate, ReservationWithTour, ReservationWithTourAndUser, AdminStats
 from app.core.db import crud
-from app.api.routers.auth import get_current_user
+from app.api.routers.auth import get_current_user, get_current_admin
 
 router = APIRouter(prefix="/reservations", tags=["Reservations"])
 
@@ -18,9 +18,10 @@ async def create_reservation(
 ):
     """
     Создание нового бронирования (требуется авторизация).
+    Один пользователь = один гость.
+    Пользователь может забронировать тур только один раз.
     
     - **tour_id**: ID тура для бронирования
-    - **guests**: количество гостей
     - **notes**: дополнительные заметки
     """
     # Проверяем, существует ли тур
@@ -29,6 +30,16 @@ async def create_reservation(
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
             detail="Tour not found"
+        )
+    
+    # Проверяем, не бронировал ли пользователь уже этот тур
+    existing_reservation = await crud.get_user_reservation_for_tour(
+        db, user_id=current_user.id, tour_id=reservation_data.tour_id
+    )
+    if existing_reservation:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="You have already booked this tour"
         )
     
     reservation = await crud.create_reservation(
@@ -137,7 +148,8 @@ async def delete_reservation(
     """
     Удаление бронирования.
     
-    Пользователь может удалять только свои бронирования.
+    Пользователь может удалять только свои бронирования со статусом "ожидает".
+    Нельзя удалять подтвержденные или отклоненные бронирования.
     """
     reservation = await crud.get_reservation_by_id(db, reservation_id)
     if not reservation:
@@ -152,5 +164,118 @@ async def delete_reservation(
             detail="Not authorized to delete this reservation"
         )
     
+    # Проверяем статус - можно удалить только ожидающие брони
+    if reservation.status != 'pending':
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Cannot delete confirmed or rejected reservations"
+        )
+    
     await crud.delete_reservation(db, reservation_id)
     return None
+    
+    await crud.delete_reservation(db, reservation_id)
+    return None
+
+
+# Admin endpoints
+
+@router.get("/admin/all", response_model=List[ReservationWithTourAndUser])
+async def get_all_reservations_admin(
+    limit: int = Query(100, ge=1, le=100),
+    offset: int = Query(0, ge=0),
+    status: str | None = Query(None, description="Filter by status: pending, confirmed, rejected"),
+    db: AsyncSession = Depends(get_async_session),
+    current_user = Depends(get_current_admin)
+):
+    """
+    [ADMIN] Получение всех бронирований в системе.
+    
+    - **limit**: количество записей на странице
+    - **offset**: смещение для пагинации
+    - **status**: фильтр по статусу (pending/confirmed/rejected)
+    """
+    reservations = await crud.get_all_reservations_admin(
+        db, 
+        limit=limit,
+        offset=offset,
+        status=status
+    )
+    
+    # Add username to each reservation
+    result = []
+    for reservation in reservations:
+        res_dict = ReservationWithTourAndUser.model_validate(reservation).model_dump()
+        res_dict['username'] = reservation.user.username if reservation.user else None
+        result.append(ReservationWithTourAndUser(**res_dict))
+    
+    return result
+
+
+@router.put("/admin/{reservation_id}/confirm", response_model=ReservationWithTour)
+async def confirm_reservation(
+    reservation_id: int,
+    db: AsyncSession = Depends(get_async_session),
+    current_user = Depends(get_current_admin)
+):
+    """
+    [ADMIN] Подтверждение бронирования.
+    """
+    reservation = await crud.get_reservation_by_id(db, reservation_id)
+    if not reservation:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Reservation not found"
+        )
+    
+    updated_reservation = await crud.update_reservation(
+        db, 
+        reservation_id,
+        {"status": "confirmed"}
+    )
+    
+    updated_reservation = await crud.get_reservation_by_id(db, reservation_id)
+    return updated_reservation
+
+
+@router.put("/admin/{reservation_id}/reject", response_model=ReservationWithTour)
+async def reject_reservation(
+    reservation_id: int,
+    db: AsyncSession = Depends(get_async_session),
+    current_user = Depends(get_current_admin)
+):
+    """
+    [ADMIN] Отклонение бронирования.
+    """
+    reservation = await crud.get_reservation_by_id(db, reservation_id)
+    if not reservation:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Reservation not found"
+        )
+    
+    updated_reservation = await crud.update_reservation(
+        db, 
+        reservation_id,
+        {"status": "rejected"}
+    )
+    
+    updated_reservation = await crud.get_reservation_by_id(db, reservation_id)
+    return updated_reservation
+
+
+@router.get("/admin/stats", response_model=AdminStats)
+async def get_admin_stats(
+    db: AsyncSession = Depends(get_async_session),
+    current_user = Depends(get_current_admin)
+):
+    """
+    [ADMIN] Получение статистики продаж.
+    
+    Возвращает:
+    - confirmed_reservations: количество подтверждённых бронирований
+    - total_revenue: общая сумма выручки
+    - total_customers: количество уникальных клиентов
+    """
+    stats = await crud.get_admin_stats(db)
+    return stats

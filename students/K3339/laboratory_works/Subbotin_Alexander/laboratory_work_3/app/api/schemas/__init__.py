@@ -15,6 +15,8 @@ from app.api.schemas.user import (
     UserProfileCreate,
     UserProfileUpdate,
     UserProfileResponse,
+    UserUpdate,
+    PasswordChange,
 )
 from app.api.schemas.tour import (
     TourBase,
@@ -28,6 +30,8 @@ from app.api.schemas.reservation import (
     ReservationUpdate,
     ReservationResponse,
     ReservationWithTour,
+    ReservationWithTourAndUser,
+    AdminStats,
 )
 from app.api.schemas.review import (
     ReviewBase,
@@ -49,6 +53,8 @@ __all__ = [
     "UserProfileCreate",
     "UserProfileUpdate",
     "UserProfileResponse",
+    "UserUpdate",
+    "PasswordChange",
     
     # Tour schemas
     "TourBase",

@@ -5,7 +5,7 @@ from typing import List, Optional
 from app.core.database import get_async_session
 from app.api.schemas import TourCreate, TourUpdate, TourResponse
 from app.core.db import crud
-from app.api.routers.auth import get_current_user
+from app.api.routers.auth import get_current_user, get_current_admin
 
 router = APIRouter(prefix="/tours", tags=["Tours"])
 
@@ -14,10 +14,10 @@ router = APIRouter(prefix="/tours", tags=["Tours"])
 async def create_tour(
     tour_data: TourCreate,
     db: AsyncSession = Depends(get_async_session),
-    current_user = Depends(get_current_user)
+    current_user = Depends(get_current_admin)
 ):
     """
-    Создание нового тура (требуется авторизация).
+    Создание нового тура (требуется права администратора).
     
     - **title**: название тура
     - **agency**: название агентства
@@ -72,10 +72,10 @@ async def update_tour(
     tour_id: int,
     tour_data: TourUpdate,
     db: AsyncSession = Depends(get_async_session),
-    current_user = Depends(get_current_user)
+    current_user = Depends(get_current_admin)
 ):
     """
-    Обновление информации о туре (требуется авторизация).
+    Обновление информации о туре (требуется права администратора).
     
     Можно обновить любые поля тура.
     """
@@ -92,10 +92,10 @@ async def update_tour(
 async def delete_tour(
     tour_id: int,
     db: AsyncSession = Depends(get_async_session),
-    current_user = Depends(get_current_user)
+    current_user = Depends(get_current_admin)
 ):
     """
-    Удаление тура (требуется авторизация).
+    Удаление тура (требуется права администратора).
     """
     deleted = await crud.delete_tour(db, tour_id)
     if not deleted:

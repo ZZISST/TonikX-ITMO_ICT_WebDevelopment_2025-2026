@@ -1,5 +1,6 @@
 import logging
 from typing import Optional
+from datetime import datetime
 from sqlalchemy import update
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -34,6 +35,9 @@ async def update_review(db: AsyncSession, review_id: int, review_data: dict) -> 
     if not review_data:
         logger.warning(f"No data to update for review ID: {review_id}")
         return None
+    
+    # Set updated_at timestamp
+    review_data['updated_at'] = datetime.utcnow()
     
     stmt = (
         update(Review)

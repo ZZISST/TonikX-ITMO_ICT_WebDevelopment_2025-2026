@@ -1,5 +1,5 @@
 from __future__ import annotations
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Optional
 
 from sqlalchemy import Integer, ForeignKey, Text, DateTime, SmallInteger
 from sqlalchemy.orm import Mapped, mapped_column, relationship
@@ -20,6 +20,7 @@ class Review(Base):
     text: Mapped[str] = mapped_column(Text, nullable=False)
     rating: Mapped[int] = mapped_column(SmallInteger, nullable=False)  # 1-10
     created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)
+    updated_at: Mapped[Optional[datetime]] = mapped_column(DateTime, nullable=True, default=None)
 
     # Relationships
     tour: Mapped["Tour"] = relationship("Tour", back_populates="reviews")
