@@ -234,6 +234,7 @@
 <li>Пароль хешируется через <code>CryptContext</code> (bcrypt) в модуле <code>security.py</code></li>
 <li>JWT создаётся функцией <code>create_access_token</code> с настраиваемым временем жизни</li>
 </ul>
+<p><a class="glightbox" data-type="image" data-width="auto" data-height="auto" href="../assets/Authentication.png" data-desc-position="bottom"><img alt="auth" src="../assets/Authentication.png"></a></p>
 <hr>
 <h3 id="tours">Туры (<code>/tours</code>)</h3>
 <table>
@@ -287,6 +288,7 @@
 <li>Схемы Pydantic: <code>TourCreate</code> (создание), <code>TourUpdate</code> (частичное обновление), <code>TourResponse</code> (ответ)</li>
 <li><code>TourUpdate</code> использует <code>exclude_unset=True</code> для partial update — обновляются только переданные поля</li>
 </ul>
+<p><a class="glightbox" data-type="image" data-width="auto" data-height="auto" href="../assets/Tours.png" data-desc-position="bottom"><img alt="tours" src="../assets/Tours.png"></a></p>
 <hr>
 <h3 id="reservations">Бронирования (<code>/reservations</code>)</h3>
 <table>
@@ -339,6 +341,7 @@
 <li>После создания/обновления бронирование перезагружается с JOIN на <code>Tour</code> для возврата полной информации</li>
 <li>Схема <code>ReservationWithTour</code> включает вложенный объект тура</li>
 </ul>
+<p><a class="glightbox" data-type="image" data-width="auto" data-height="auto" href="../assets/Reservations.png" data-desc-position="bottom"><img alt="reservations" src="../assets/Reservations.png"></a></p>
 <hr>
 <h3 id="reviews">Отзывы (<code>/reviews</code>)</h3>
 <table>
@@ -390,7 +393,34 @@
 <li>Схема <code>ReviewWithUser</code> обогащает ответ именем пользователя через relationship</li>
 <li>Рейтинг валидируется Pydantic (значения 1-10)</li>
 </ul>
+<p><a class="glightbox" data-type="image" data-width="auto" data-height="auto" href="../assets/Reviews.png" data-desc-position="bottom"><img alt="reviews" src="../assets/Reviews.png"></a></p>
 <hr>
+<h3 id="manage_database">Миграции (<code>/manage_database</code>)</h3>
+<table>
+<thead>
+<tr>
+<th>Метод</th>
+<th>Эндпоинт</th>
+<th>Описание</th>
+<th>Авторизация</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>POST</td>
+<td><code>/manage_database/clear_database/</code></td>
+<td>Очистить базу данных от всех данных (кроме таблицы alembic с миграциями)</td>
+<td>нет</td>
+</tr>
+<tr>
+<td>POST</td>
+<td><code>/manage_database/migrate_tours</code></td>
+<td>Запустить миграцию туров</td>
+<td>Нет</td>
+</tr>
+</tbody>
+</table>
+<p><a class="glightbox" data-type="image" data-width="auto" data-height="auto" href="../assets/Others.png" data-desc-position="bottom"><img alt="migrations" src="../assets/Others.png"></a></p>
 <h2 id="_6">Асинхронная работа с базой данных</h2>
 <h3 id="_7">Подключение к БД</h3>
 <p>Используется асинхронный движок SQLAlchemy с драйвером <code>asyncpg</code>:</p>

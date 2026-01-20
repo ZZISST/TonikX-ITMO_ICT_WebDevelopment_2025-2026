@@ -198,6 +198,7 @@
     def __str__(self):
         return f"Profile of {self.user.username}"
 </code></pre>
+<p><a class="glightbox" data-type="image" data-width="auto" data-height="auto" href="../assets/userProfile.png" data-desc-position="bottom"><img alt="UserProfile" src="../assets/userProfile.png"></a></p>
 <h3 id="2-tour">2. Tour (Тур)</h3>
 <p>Основная модель для хранения информации о туристических турах.</p>
 <pre><code class="language-python">class Tour(models.Model):
@@ -232,6 +233,7 @@
 - <code>confirmed</code> - статус подтверждения брони администратором (для имитации оплаты)
 - <code>guests</code> - количество гостей
 - Внешние ключи связывают бронирование с туром и пользователем</p>
+<p><a class="glightbox" data-type="image" data-width="auto" data-height="auto" href="../assets/reservations.png" data-desc-position="bottom"><img alt="Reservation" src="../assets/reservations.png"></a></p>
 <h3 id="4-review">4. Review (Отзыв)</h3>
 <p>Модель для хранения отзывов пользователей о турах.</p>
 <pre><code class="language-python">class Review(models.Model):
@@ -244,6 +246,7 @@
     class Meta:
         ordering = ['-created_at']
 </code></pre>
+<p><a class="glightbox" data-type="image" data-width="auto" data-height="auto" href="../assets/review.png" data-desc-position="bottom"><img alt="Review" src="../assets/review.png"></a></p>
 <h2 id="views">Реализованные представления (Views)</h2>
 <h3 id="1-tourlistview-">1. TourListView - Список туров с пагинацией и поиском</h3>
 <pre><code class="language-python">class TourListView(ListView):
@@ -268,6 +271,7 @@
 - Пагинация страниц (8 туров на странице)
 - Поиск по названию, агентству, городу и описанию
 - Сортировка по дате начала тура</p>
+<p><a class="glightbox" data-type="image" data-width="auto" data-height="auto" href="../assets/tours.png" data-desc-position="bottom"><img alt="Tours" src="../assets/tours.png"></a></p>
 <h3 id="2-tourdetailview-">2. TourDetailView - Детальная страница тура с отзывами</h3>
 <pre><code class="language-python">class TourDetailView(FormMixin, DetailView):
     model = Tour
@@ -312,6 +316,7 @@
 - Форма для добавления отзыва с рейтингом (1-10)
 - Кнопка бронирования
 - Статус бронирования пользователя (подтверждено/ожидает)</p>
+<p><a class="glightbox" data-type="image" data-width="auto" data-height="auto" href="../assets/tour.png" data-desc-position="bottom"><img alt="Tour" src="../assets/tour.png"></a></p>
 <h3 id="3-soldbycityview-">3. SoldByCityView - Статистика продаж по городам</h3>
 <pre><code class="language-python">class SoldByCityView(LoginRequiredMixin, TemplateView):
     template_name = 'sold_by_city.html'
@@ -347,6 +352,7 @@
 - Подсчет общего количества броней и подтвержденных отдельно
 - Расчет дохода (количество гостей × цена тура)
 - Доступ только для авторизованных пользователей</p>
+<p><a class="glightbox" data-type="image" data-width="auto" data-height="auto" href="../assets/statistic.png" data-desc-position="bottom"><img alt="Reservation" src="../assets/statistic.png"></a></p>
 <h3 id="4">4. Остальные представления</h3>
 <ul>
 <li><strong>TourCreateView</strong> - создание тура (только для администраторов)</li>
@@ -356,6 +362,8 @@
 <li><strong>ProfileUpdateView</strong> - редактирование профиля</li>
 <li><strong>register</strong> - регистрация нового пользователя</li>
 </ul>
+<p>Вид домашней страницы
+<a class="glightbox" data-type="image" data-width="auto" data-height="auto" href="../assets/homePage.png" data-desc-position="bottom"><img alt="TourCreateView" src="../assets/homePage.png"></a></p>
 <h2 id="_5">Формы</h2>
 <h3 id="1-reviewform-">1. ReviewForm - Форма отзыва с интерактивным слайдером</h3>
 <pre><code class="language-python">class ReviewForm(forms.ModelForm):
@@ -411,6 +419,10 @@
 - Минимум 8 символов
 - Хотя бы одна заглавная буква
 - Только латинские буквы, цифры и специальные символы (@, ., +, -, _)</p>
+<p>Регистрация
+<a class="glightbox" data-type="image" data-width="auto" data-height="auto" href="../assets/registration.png" data-desc-position="bottom"><img alt="RegisterForm" src="../assets/registration.png"></a></p>
+<p>Вход
+<a class="glightbox" data-type="image" data-width="auto" data-height="auto" href="../assets/login.png" data-desc-position="bottom"><img alt="Login" src="../assets/login.png"></a></p>
 <h2 id="-">Расширенная админ-панель</h2>
 <h3 id="1-reservationadmin-">1. ReservationAdmin - Управление бронированиями</h3>
 <pre><code class="language-python">@admin.register(Reservation)
@@ -437,6 +449,7 @@ class ReservationAdmin(admin.ModelAdmin):
 - Фильтры по статусу, дате, городу
 - Поиск по пользователю и названию тура
 - Редактирование количества гостей прямо в списке</p>
+<p><a class="glightbox" data-type="image" data-width="auto" data-height="auto" href="../assets/reservationDjangoAdmin.png" data-desc-position="bottom"><img alt="ReservationAdmin" src="../assets/reservationDjangoAdmin.png"></a></p>
 <h3 id="2-touradmin-">2. TourAdmin - Управление турами</h3>
 <pre><code class="language-python">@admin.register(Tour)
 class TourAdmin(admin.ModelAdmin):
@@ -455,6 +468,9 @@ class TourAdmin(admin.ModelAdmin):
 <p><strong>Дополнительные колонки:</strong>
 - Общее количество броней
 - Общее количество гостей</p>
+<p><a class="glightbox" data-type="image" data-width="auto" data-height="auto" href="../assets/addTour.png" data-desc-position="bottom"><img alt="AddTour" src="../assets/addTour.png"></a></p>
+<h3 id="3-djangoadminusers-">3. djangoAdminUsers - Управление пользователями</h3>
+<p><a class="glightbox" data-type="image" data-width="auto" data-height="auto" href="../assets/djangoAdminUsers.png" data-desc-position="bottom"><img alt="djangoAdminUsers" src="../assets/djangoAdminUsers.png"></a></p>
 <h2 id="_6">Шаблоны и интерфейс</h2>
 <h3 id="bootstrap-5">Базовый шаблон с Bootstrap 5</h3>
 <pre><code class="language-html">&lt;!-- base.html --&gt;
